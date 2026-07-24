@@ -139,3 +139,60 @@ Computer Engineering Student
 
 GitHub:
 https://github.com/payalsurvase
+
+
+# Screenshots
+
+## 🏠 Home Page
+
+![Home Page 1](screenshots/Home%20Page1.png)
+
+![Home Page 2](screenshots/Home%20Page2.png)
+
+---
+
+## 📄 Resume Upload
+
+![Resume Upload](screenshots/Resume%20Upload1.png)
+
+---
+
+## 🛠 Skills Analysis
+
+![Skills Analysis](screenshots/skills%20analysis.png)
+
+---
+
+## 📊 Resume Performance
+
+![Resume Performance](screenshots/resume%20performance.png)
+
+---
+
+## 💡 Resume Suggestions
+
+![Resume Suggestions](screenshots/resume%20suggestions.png)
+
+---
+
+## 📑 Resume Section Analysis
+
+![Resume Section Analysis](screenshots/resume_section_analysis.png)
+
+---
+
+## 🚀 Resume Improvement Suggestions
+
+![Resume Improvement Suggestions](screenshots/resume_improvement_suggestions.png)
+
+---
+
+## 🏆 Resume Ranking Table
+
+![Ranking Table](screenshots/ranking%20table.png)
+
+---
+
+## ⭐ Ranking Score
+
+![Ranking Score](screenshots/ranking_score.png)
