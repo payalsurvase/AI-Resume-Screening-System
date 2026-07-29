@@ -19,17 +19,12 @@ def clean_text(text):
     text = re.sub(r"\+?\d[\d\s-]{8,15}", "", text)
 
     # Remove Special Characters
-    text = re.sub(r"[^a-zA-Z0-9\s]", " ", text)
+    text = re.sub(r"[^a-zA-Z0-9+#\-\s]", " ", text)
 
     # Remove Extra Spaces
     text = re.sub(r"\s+", " ", text).strip()
 
     return text
-
-
-# -----------------------------------
-# Find Missing Skills
-# -----------------------------------
 
 # -----------------------------------
 # Find Missing Skills
@@ -84,20 +79,27 @@ def get_missing_skills(found_skills, required_skills):
 # -----------------------------------
 def extract_required_skills(job_description, all_skills):
 
-    jd = clean_text(job_description)
+    # Remove heading BEFORE cleaning
+    jd = job_description.replace("Skills Required:", "")
+
+    # Split first
+    jd_skills = [clean_text(s.strip()) for s in jd.split(",") if s.strip()]
+
+    print("\n===== JD SKILLS =====")
+    print(jd_skills)
 
     required = set()
 
     # Match original skills
     for skill in all_skills:
 
-        if clean_text(skill) in jd:
+        if clean_text(skill) in jd_skills:
             required.add(skill)
 
     # Match aliases
     for alias, original in SKILL_ALIASES.items():
 
-        if clean_text(alias) in jd:
+        if clean_text(alias) in jd_skills:
             required.add(original)
 
-    return sorted(list(required))
+    return sorted(required)

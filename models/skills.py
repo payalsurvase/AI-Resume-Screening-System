@@ -116,7 +116,6 @@ def extract_skills(text, all_skills):
     for t in tokens:
         print(repr(t))
 
-   
     print(tokens)
     print([normalize_text(t) for t in tokens])
 

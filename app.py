@@ -187,11 +187,13 @@ elif menu == "Student Mode":
             all_skills
             )
 
+        print("\n====== JOB DESCRIPTION =====")
+        print(job_description)
+
         required_skills = extract_required_skills(
             job_description,
             all_skills
         )
-
         
         missing_skills = get_missing_skills(
             resume_skills,
@@ -202,17 +204,17 @@ elif menu == "Student Mode":
               list(set(resume_skills).intersection(set(required_skills)))
         )
 
-        print("\nResume Skills:")
-        print(resume_skills)
+        # print("\nResume Skills:")
+        # print(resume_skills)
 
-        print("\nRequired Skills:")
-        print(required_skills)
+        # print("\nRequired Skills:")
+        # print(required_skills)
 
-        print("\nMatched Skills:")
-        print(matched_skills)
+        # print("\nMatched Skills:")
+        # print(matched_skills)
 
-        print("\nMissing Skills:")
-        print(missing_skills)
+        # print("\nMissing Skills:")
+        # print(missing_skills)
 
         recommended_courses = []
 
