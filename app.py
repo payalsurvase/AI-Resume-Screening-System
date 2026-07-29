@@ -21,6 +21,7 @@ from models.section_parser import extract_sections,clean_sections
 from models.nlp_parser import parse_resume_nlp
 from models.resume_suggestions import generate_resume_suggestions
 from io import BytesIO
+from models.shortlist import calculate_shortlist_status
 model = joblib.load("models/resume_shortlist_model.pkl")
 
 # -----------------------------
@@ -138,17 +139,30 @@ elif menu == "Student Mode":
         # st.write(type(uploaded_resume))
 
         candidate = parse_resume(uploaded_resume)
+        resume_text = candidate["text"]
 
         sections = extract_sections(candidate["text"])
         sections = clean_sections(sections)
 
-        st.subheader("📂 Parsed Resume Sections")
-        st.write(sections)
+        skills_text = ""
 
-        resume_text = candidate["text"]
+        if "skills" in sections and sections["skills"]:
+            skills_text = "\n".join(sections["skills"])
 
-        entities = parse_resume_nlp(resume_text)
-        st.subheader("🧠 NLP Extracted Entities")
+        else:
+            skills_text = resume_text
+
+        
+
+        # st.subheader("📂 Parsed Resume Sections")
+        # st.write(sections)
+
+        
+        # st.subheader("Experience Debug")
+        # st.text(resume_text)
+
+        # entities = parse_resume_nlp(resume_text)
+        # st.subheader("🧠 NLP Extracted Entities")
         # st.write(entities)
 
         resume_sections = detect_resume_sections(resume_text) 
@@ -169,7 +183,7 @@ elif menu == "Student Mode":
         all_skills = load_skills()
 
         resume_skills = extract_skills(
-            resume_text,
+            skills_text,
             all_skills
             )
 
@@ -178,7 +192,7 @@ elif menu == "Student Mode":
             all_skills
         )
 
-
+        
         missing_skills = get_missing_skills(
             resume_skills,
             required_skills
@@ -187,6 +201,18 @@ elif menu == "Student Mode":
         matched_skills = sorted(
               list(set(resume_skills).intersection(set(required_skills)))
         )
+
+        print("\nResume Skills:")
+        print(resume_skills)
+
+        print("\nRequired Skills:")
+        print(required_skills)
+
+        print("\nMatched Skills:")
+        print(matched_skills)
+
+        print("\nMissing Skills:")
+        print(missing_skills)
 
         recommended_courses = []
 
@@ -214,14 +240,21 @@ elif menu == "Student Mode":
         # AI Resume Shortlist Prediction
         # -----------------------------
 
-        years_experience = extract_experience(resume_text) 
-        st.write("Experience:",years_experience)          # Change later if you extract experience automatically
-        education_level = extract_education(resume_text) # Change later if you extract education automatically
-        st.subheader("Resume Text Debug")
-        st.text(resume_text[:3000])
+        experience = extract_experience(resume_text)
+        years_experience = experience["years"]
+        experience_text = experience["experience"] 
+
+        st.write("Experience:",years_experience)   
+               # Change later if you extract experience automatically
+        education_level = extract_education(resume_text) 
+        # Change later if you extract education automatically
+        # st.subheader("Resume Text Debug")
+        # st.text(resume_text[:3000])
+
         project_count = extract_project_count(resume_text)
         projects = extract_projects(resume_text)
         project_count = len(projects)
+
         resume_length = len(resume_text)
         github_activity = extract_github(resume_text)           # Change later if GitHub link is found
         linkedin_activity = extract_linkedin(resume_text)
@@ -236,7 +269,7 @@ elif menu == "Student Mode":
 
             st.metric("🎓 Education", education_level)
 
-            st.metric("👨‍💼 Experience", f"{years_experience} Years")
+            st.metric("👨‍💼 Experience", experience_text)
 
             st.metric("📂 Projects", project_count)
 
@@ -268,14 +301,12 @@ elif menu == "Student Mode":
 
         prediction = model.predict(model_input)[0]
 
-        st.subheader("🤖 AI Resume Prediction")
-
         if prediction == 1:
-            st.success("✅ Resume is likely to be Shortlisted")
+            ai_prediction = "Shortlisted"
         else:
-            st.error("❌ Resume is likely to be Rejected")
+            ai_prediction = "Rejected"
 
-
+        
         # -----------------------------
         # Final Resume Score
         # -----------------------------
@@ -307,6 +338,51 @@ elif menu == "Student Mode":
 )
 
         resume_score = result["final_score"]
+
+        # -----------------------------
+        # AI Prediction
+        # -----------------------------
+
+        st.subheader("🤖 AI Prediction")
+
+        if ai_prediction == "Shortlisted":
+            st.success("✅ AI Model predicts this resume is likely to be shortlisted.")
+        else:
+            st.error("❌ AI Model predicts this resume is likely to be rejected.")
+
+        # -----------------------------
+        # Final Recruiter Decision
+        # -----------------------------
+
+        status, icon , reasons = calculate_shortlist_status(
+            resume_score,
+            ats_score,
+            match_score,
+            project_count,
+            years_experience,
+            github_activity,
+            linkedin_activity,
+            completeness_score
+        )
+
+        st.subheader("🏆 Final Recruiter Decision")
+
+        if status == "Strongly Shortlisted":
+            st.success(f"{icon} {status}")
+
+        elif status == "Shortlisted":
+            st.success(f"{icon} {status}")
+
+        elif status == "Needs Manual Review":
+            st.warning(f"{icon} {status}")
+
+        else:
+            st.error(f"{icon} {status}")
+
+        st.subheader("decision reason")
+        for reason in reasons:
+            st.write(reason)
+        
 
         st.subheader("🎯 ATS Score")
 

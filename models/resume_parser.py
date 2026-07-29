@@ -1,7 +1,10 @@
-import pdfplumber
+
 import docx
 import re
 import fitz
+import streamlit as st
+
+from models.text_extractor import extract_text
 
 # -----------------------------
 # Read PDF using PyMuPDF
@@ -22,6 +25,26 @@ def read_pdf_fitz(file):
 
     return text
 
+def extract_pdf_links(file):
+
+    links = []
+
+    pdf = fitz.open(stream=file.read(), filetype="pdf")
+
+    for page in pdf:
+
+        page_links = page.get_links()
+
+        for link in page_links:
+
+            if "uri" in link:
+                links.append(link["uri"])
+
+    pdf.close()
+
+    file.seek(0)
+
+    return links
 # -----------------------------
 # Read PDF Resume
 # -----------------------------
@@ -119,19 +142,17 @@ def parse_resume(uploaded_file):
         }
 
     if uploaded_file.name.endswith(".pdf"):
+        resume_text = extract_text(uploaded_file)
+        # st.write(resume_text)
+        links = extract_pdf_links(uploaded_file)
 
-        try:
-            resume_text = read_pdf_fitz(uploaded_file)
-
-        except Exception:
-            resume_text = read_pdf(uploaded_file)
+        if links:
+            resume_text += "\n" + "\n".join(links)
 
     elif uploaded_file.name.endswith(".docx"):
-
         resume_text = read_docx(uploaded_file)
 
     else:
-
         resume_text = ""
 
     candidate = {

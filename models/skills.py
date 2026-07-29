@@ -1,9 +1,10 @@
 import pandas as pd
 import re
 import string
+import streamlit as st
 
 from skill_aliases import SKILL_ALIASES
-
+from models.section_parser import extract_sections,clean_sections
 # -----------------------------
 # Load Skills from CSV
 # -----------------------------
@@ -31,45 +32,112 @@ def normalize_text(text):
     text = text.lower()
 
     text = text.replace("-", " ")
-
     text = text.replace("/", " ")
 
-    text = text.replace("_", " ")
+    # Keep important programming symbols
+    allowed = "+#."
+
+    remove = "".join(ch for ch in string.punctuation if ch not in allowed)
 
     text = text.translate(
-        str.maketrans("", "", string.punctuation)
+        str.maketrans("", "", remove)
     )
 
     text = re.sub(r"\s+", " ", text)
 
-    return text
+    return text.strip()
+
+def extract_skill_tokens(skill_text):
+
+    tokens = []
+
+    lines = skill_text.split("\n")
+
+        # Join "Frameworks &" + "Tools: ..."
+    i = 0
+    while i < len(lines) - 1:
+        if lines[i].strip().endswith("&"):
+                lines[i] = lines[i].strip() + " " + lines[i + 1].strip()
+                del lines[i + 1]
+        else:
+            i += 1
+
+    for line in lines:
+
+        
+        line = line.strip()
+        line = re.sub(r"^[•▪●■►]+\s*", "", line)
+
+        if not line:
+            continue
+
+        # Remove section labels
+        if re.match(r"^Machine Learning\s*:", line, flags=re.I):
+            line = line.replace("Machine Learning:", "Machine Learning,", 1)
+
+        elif re.match(r"^Languages\s*:", line, flags=re.I):
+            line = line.replace("Languages:", "", 1)
+
+        elif re.match(r"^Frameworks\s*&\s*Tools\s*:", line, flags=re.I):
+            line = line.replace("Frameworks & Tools:", "", 1)
+
+        elif re.match(r"^Libraries\s*&\s*Databases\s*:", line, flags=re.I):
+            line = line.replace("Libraries & Databases:", "", 1)
+
+        elif re.match(r"^Technical Skills\s*:", line, flags=re.I):
+            continue
+
+        line = line.replace("&",",")
+
+        # Split by comma only
+        parts = [p.strip() for p in line.split(",")]
+        for i in range(len(parts)):
+            if parts[i].lower() == "supervised":
+                parts[i] = "Supervised Learning"
+
+        for part in parts:
+            if part:
+                 tokens.append(part)
+
+    return tokens
 
 # -----------------------------
 # Extract Skills
 # -----------------------------
 
 def extract_skills(text, all_skills):
+    skill_text = text
+    print("======RAW SKILL TEXT======")
+    print(skill_text)
+    print("=========================")
+    tokens = extract_skill_tokens(skill_text)
+    
+    print("\n===== TOKENS =====")
+    for t in tokens:
+        print(repr(t))
 
-    text = normalize_text(text)
+   
+    print(tokens)
+    print([normalize_text(t) for t in tokens])
 
     found_skills = set()
 
-    # Detect all original skills
+    normalized_tokens = [normalize_text(token) for token in tokens]
+
+    normalized_token_set = set(normalized_tokens)
+
     for skill in all_skills:
 
         normalized_skill = normalize_text(skill)
-        pattern = r"\b" + re.escape(normalized_skill) + r"\b"
 
-        if re.search(pattern, text):
+        if normalized_skill in normalized_token_set:
             found_skills.add(skill)
+        # Alias Matching
+        for alias, original in SKILL_ALIASES.items():
 
-    # Detect aliases
-    for alias, original in SKILL_ALIASES.items():
+            normalized_alias = normalize_text(alias)
 
-        normalized_alias = normalize_text(alias)
-        pattern = r"\b" + re.escape(normalized_alias) + r"\b"
+            if normalized_alias in normalized_token_set:
+                found_skills.add(original)
 
-        if re.search(pattern, text):
-            found_skills.add(original)
-
-    return sorted(list(found_skills))
+    return sorted(found_skills)

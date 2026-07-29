@@ -1,54 +1,175 @@
 import re
 from datetime import datetime
 
+MONTHS = {
+    "jan": 1, "january": 1,
+    "feb": 2, "february": 2,
+    "mar": 3, "march": 3,
+    "apr": 4, "april": 4,
+    "may": 5,
+    "jun": 6, "june": 6,
+    "jul": 7, "july": 7,
+    "aug": 8, "august": 8,
+    "sep": 9, "sept": 9, "september": 9,
+    "oct": 10, "october": 10,
+    "nov": 11, "november": 11,
+    "dec": 12, "december": 12
+}
+
+
+def merge_intervals(intervals):
+    if not intervals:
+        return []
+
+    intervals.sort()
+
+    merged = [intervals[0]]
+
+    for current in intervals[1:]:
+
+        last = merged[-1]
+
+        if current[0] <= last[1]:
+            merged[-1] = (last[0], max(last[1], current[1]))
+        else:
+            merged.append(current)
+
+    return merged
+
 def extract_experience(resume_text):
 
-    text = resume_text.lower()
+    text = get_experience_section(resume_text)
 
-    # -----------------------------
-    # Method 1 : Direct years
-    # Example : 2 years, 3+ yrs
-    # -----------------------------
-
-    matches = re.findall(
-        r'(\d+)\+?\s*(?:years|year|yrs|yr)',
-        text
+    date_pattern = re.compile(
+        r'((?:\d{1,2}\s+)?(?:jan|january|feb|february|mar|march|apr|april|may|jun|june|jul|july|aug|august|sep|sept|september|oct|october|nov|november|dec|december)\s+\d{4}|\d{1,2}/\d{4}|\d{4}|present|current)\s*(?:-|–|—|to)\s*((?:\d{1,2}\s+)?(?:jan|january|feb|february|mar|march|apr|april|may|jun|june|jul|july|aug|august|sep|sept|september|oct|october|nov|november|dec|december)\s+\d{4}|\d{1,2}/\d{4}|\d{4}|present|current)',
+        re.IGNORECASE
     )
 
-    if matches:
-        return max(int(x) for x in matches)
+    intervals = []
 
-    # -----------------------------
-    # Method 2 : Date ranges
-    # Example :
-    # Sept 2023 - Oct 2024
-    # Jan 2022 - Present
-    # Aug 2023 - Currently
-    # -----------------------------
+    for start_text, end_text in date_pattern.findall(text):
 
-    year_matches = re.findall(
-        r'(\d{4}).*?(?:-|to).*?(present|currently|\d{4})',
-        text
-    )
+        start = parse_date(start_text)
 
-    if year_matches:
+        end = parse_date(end_text)
 
-        total = 0
+        if start is not None and end is not None and end >= start:
+            intervals.append((start, end))
 
-        current_year = datetime.now().year
+    merged = merge_intervals(intervals)
 
-        for start, end in year_matches:
+    total_months = sum(end - start for start, end in merged)
 
-            start = int(start)
+    years = total_months // 12
 
-            if end in ["present", "currently"]:
-                end = current_year
-            else:
-                end = int(end)
+    months = total_months % 12
 
-            if end >= start:
-                total += end - start
+    return {
+        "years": years,
+        "months": months,
+        "total_months": total_months,
+        "experience": f"{years} Years {months} Months"
+    }
 
-        return total
 
-    return 0
+def get_experience_section(text):
+
+    text = text.lower()
+
+    headings = [
+        "professional experience",
+        "experience",
+        "work experience",
+        "employment",
+        "internships"
+    ]
+
+    end_headings = [
+        "projects",
+        "skills",
+        "education",
+        "certifications",
+        "achievements",
+        "languages"
+    ]
+
+    start = -1
+
+    for heading in headings:
+        pos = text.find(heading)
+        if pos != -1:
+            start = pos
+            break
+
+    if start == -1:
+        return text
+
+    end = len(text)
+
+    for heading in end_headings:
+        pos = text.find(heading, start + 20)
+
+        if pos != -1 and pos < end:
+            end = pos
+
+    return text[start:end]
+
+import calendar
+
+def parse_date(date_str):
+
+    date_str = date_str.lower().strip()
+
+    current = datetime.now()
+
+    if "present" in date_str or "current" in date_str:
+        return current.year * 12 + current.month
+
+    patterns = [
+
+        r'(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})',
+
+        r'([a-zA-Z]+)\s+(\d{4})',
+
+        r'(\d{1,2})/(\d{4})',
+
+        r'(\d{4})'
+
+    ]
+
+    for pattern in patterns:
+
+        m = re.match(pattern, date_str)
+
+        if not m:
+            continue
+
+        if pattern == patterns[0]:
+
+            day, month, year = m.groups()
+
+            month = MONTHS[month[:3]]
+
+            return int(year) * 12 + month
+
+        elif pattern == patterns[1]:
+
+            month, year = m.groups()
+
+            month = MONTHS[month[:3]]
+
+            return int(year) * 12 + month
+
+        elif pattern == patterns[2]:
+
+            month, year = m.groups()
+
+            return int(year) * 12 + int(month)
+
+        elif pattern == patterns[3]:
+
+            year = int(m.group(1))
+
+            return year * 12 + 1
+
+    return None

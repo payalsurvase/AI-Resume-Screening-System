@@ -3,88 +3,98 @@ import re
 SECTION_HEADERS = {
 
     "profile":[
-        "profile",
-        "summary",
-        "professional summary",
-        "career summary",
-        "objective",
-        "career objective",
-        "about me"
+        "profile","summary","professional summary","career summary",
+        "executive summary","about","about me","career objective",
+        "objective","professional profile","introduction"
     ],
 
     "experience":[
-        "experience",
-        "work experience",
-        "professional experience",
-        "employment",
-        "employment history",
-        "internship",
-        "internships"
+        "experience","work experience","professional experience",
+        "employment","employment history","career history",
+        "work history","internship","internships",
+        "industrial training","training","professional background"
     ],
 
     "education":[
-        "education",
-        "academic",
-        "academic details",
-        "qualification",
-        "qualifications",
-        "education details"
+        "education","academic","academic details",
+        "academic background","qualification",
+        "qualifications","education details",
+        "educational qualification","academics"
     ],
 
     "projects":[
-        "projects",
-        "project",
-        "academic projects",
-        "personal projects",
-        "major projects",
-        "minor projects",
-        "key projects"
+        "projects","project","academic projects",
+        "personal projects","major projects",
+        "minor projects","key projects",
+        "live projects","industrial projects",
+        "project experience"
     ],
 
     "skills":[
         "skills",
         "technical skills",
         "technical skill",
-        "core skills",
+        "technical expertise",
+        "technical proficiency",
+        "technical competencies",
         "professional skills",
+        "core skills",
+        "core competencies",
         "key skills",
-        "competencies"
+        "competencies",
+        "expertise",
+        "technology",
+        "technologies",
+        "tech stack",
+        "tools",
+        "software skills",
+        "programming languages"
     ],
 
     "certifications":[
         "certifications",
         "certificates",
         "licenses",
-        "courses"
+        "courses",
+        "professional certifications",
+        "training certifications"
     ],
 
     "achievements":[
         "achievements",
         "awards",
-        "accomplishments"
+        "honors",
+        "accomplishments",
+        "recognition"
     ],
 
     "languages":[
-        "languages"
+        "languages",
+        "language proficiency"
     ],
 
     "hobbies":[
         "hobbies",
-        "interests"
+        "interests",
+        "extra curricular activities",
+        "extracurricular activities"
     ],
 
     "contact":[
-        "contact"
+        "contact",
+        "contact information",
+        "personal details",
+        "personal information"
     ],
 
     "soft_skills":[
+        "soft skills",
         "personal skills",
-        "soft skiils",
-        "professional skills"
-     ],
-
- }
-
+        "interpersonal skills",
+        "professional skills",
+        "behavioral skills"
+    ]
+}
 
 def extract_sections(resume_text):
 
@@ -118,15 +128,52 @@ def extract_sections(resume_text):
             continue
 
         lower = line.lower().strip()
-        lower = re.sub(r"[:|\-]+$", "",lower).strip()
+        print("LINE:",repr(line))
+
+        # Remove decorative symbols
+        lower = lower.replace("|", " ")
+        lower = lower.replace("•", " ")
+        lower = lower.replace("*", " ")
+        lower = re.sub(r"\s+"," ",lower)
+
+        # Remove trailing : or -
+        lower = re.sub(r"[:|\-]+$", "", lower).strip()
+
+        # Detect merged section headings inside a line
+        for section, headers in SECTION_HEADERS.items():
+
+            for header in headers:
+
+                pattern = r"\b" + re.escape(header) + r"\b"
+
+                if re.search(pattern, lower):
+
+                    idx = lower.find(header)
+
+                    # If heading is not at beginning, split the line
+                    if idx > 0:
+
+                        before = line[:idx].strip()
+
+                        after = line[idx:].strip()
+
+                        if before:
+                            sections[current_section].append(before)
+
+                        line = after
+                        lower = line.lower().strip()
+
+                    break
 
         matched = False
 
         for section, headers in SECTION_HEADERS.items():
 
             for header in headers:
+                if "technical" in lower:
+                    print("FOUND LINE :",repr(lower))
 
-                if lower == header or lower.startswith(header):
+                if re.fullmatch(rf"{re.escape(header)}[:\s]*",lower):
 
                     current_section = section
 
@@ -141,8 +188,35 @@ def extract_sections(resume_text):
 
         if not matched:
 
-            sections[current_section].append(line)
+            # Stop skills section if another section starts
+            if current_section == "skills":
 
+                stop_headers = [
+                    "projects",
+                    "experience",
+                    "internship",
+                    "education",
+                    "certifications",
+                    "achievements",
+                    "extra curricular",
+                    "extracurricular",
+                    "hobbies"
+                ]
+
+                lower_line = line.lower()
+
+                if lower_line.strip() in stop_headers:
+                    current_section = "other"
+
+                sections[current_section].append(line)
+                
+    print("\n========== PARSED SECTIONS ==========")
+
+    for sec, content in sections.items():
+        print("\nSECTION:", sec)
+        print("--------------------------------")
+        for x in content:
+            print(x)
     return sections
 
 

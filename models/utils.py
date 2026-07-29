@@ -79,11 +79,6 @@ def get_missing_skills(found_skills, required_skills):
 
     return sorted(missing)
 
-
-# -----------------------------------
-# Extract Required Skills from JD
-# -----------------------------------
-
 # -----------------------------------
 # Extract Required Skills from JD
 # -----------------------------------

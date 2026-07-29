@@ -129,6 +129,6 @@ SKILL_ALIASES = {
     "tinkercad": "Tinkercad",
 
     # Version Control
-    "github": "Git",
+    "github": "GitHub",
 
 }
