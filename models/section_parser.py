@@ -205,7 +205,7 @@ def extract_sections(resume_text):
 
                 lower_line = line.lower()
 
-                if lower_line.strip() in stop_headers:
+                if any(header in lower_line for header in stop_headers):
                     current_section = "other"
 
                 sections[current_section].append(line)

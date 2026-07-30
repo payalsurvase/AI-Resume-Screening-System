@@ -7,7 +7,7 @@ def generate_resume_suggestions(
     found_skills,
     required_skills,
     project_count,
-    years_experience,
+    experience_months,
     education_level,
     github_activity
 
@@ -41,7 +41,7 @@ def generate_resume_suggestions(
     # Experience
     # -------------------------
 
-    if years_experience == 0:
+    if experience_months <= 0:
 
         suggestions.append(
             "Add internship or work experience."

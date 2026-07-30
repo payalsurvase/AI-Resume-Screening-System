@@ -243,10 +243,10 @@ elif menu == "Student Mode":
         # -----------------------------
 
         experience = extract_experience(resume_text)
-        years_experience = experience["years"]
+        experience_months = experience["total_months"]
         experience_text = experience["experience"] 
 
-        st.write("Experience:",years_experience)   
+        st.write("Experience:",experience_months)   
                # Change later if you extract experience automatically
         education_level = extract_education(resume_text) 
         # Change later if you extract education automatically
@@ -293,7 +293,7 @@ elif menu == "Student Mode":
         }
 
         model_input = pd.DataFrame([{
-            "years_experience": years_experience,
+            "years_experience": experience_months,
             "skills_match_score": match_score,
             "education_level": education_map.get(education_level, 1),
             "project_count": project_count,
@@ -318,7 +318,7 @@ elif menu == "Student Mode":
             match_score,
             ats_score,
             project_count,
-            years_experience,
+            experience_months,
             education_level,
             github_activity
         )
@@ -331,7 +331,7 @@ elif menu == "Student Mode":
 
             project_count,
 
-            years_experience,
+            experience_months,
 
             education_level,
 
@@ -361,7 +361,7 @@ elif menu == "Student Mode":
             ats_score,
             match_score,
             project_count,
-            years_experience,
+            experience_months,
             github_activity,
             linkedin_activity,
             completeness_score

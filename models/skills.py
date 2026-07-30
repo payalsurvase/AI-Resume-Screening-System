@@ -84,10 +84,27 @@ def extract_skill_tokens(skill_text):
         elif re.match(r"^Libraries\s*&\s*Databases\s*:", line, flags=re.I):
             line = line.replace("Libraries & Databases:", "", 1)
 
+        elif re.match(r"^AI/ML\s*:", line, flags=re.I):
+            line = line.replace("AI/ML:", "", 1)
+
+        elif re.match(r"^Frameworks\s*:", line, flags=re.I):
+            line = line.replace("Frameworks:", "", 1)
+
+        elif re.match(r"^Libraries\s*:", line, flags=re.I):
+            line = line.replace("Libraries:", "", 1)
+
+        elif re.match(r"^Tools\s*:", line, flags=re.I):
+            line = line.replace("Tools:", "", 1)
+
+        elif re.match(r"^Soft Skills\s*:", line, flags=re.I):
+            line = line.replace("Soft Skills:", "", 1)
+
         elif re.match(r"^Technical Skills\s*:", line, flags=re.I):
             continue
 
         line = line.replace("&",",")
+        line = line.replace("!",",")
+        line = line.replace(";",",")
 
         # Split by comma only
         parts = [p.strip() for p in line.split(",")]
@@ -138,5 +155,55 @@ def extract_skills(text, all_skills):
 
             if normalized_alias in normalized_token_set:
                 found_skills.add(original)
+
+        normalized_text = normalize_text(skill_text)
+
+        for skill in all_skills:
+
+            normalized_skill = normalize_text(skill)
+
+            if len(normalized_skill) <= 2:
+
+                # Skip single-letter programming languages
+                if normalized_skill in ["c", "r"]:
+                    continue
+
+                pattern = r"\b" + re.escape(normalized_skill) + r"\b"
+
+                if re.search(pattern, normalized_text):
+                    found_skills.add(skill)
+
+            else:
+                if normalized_skill in normalized_text:
+                    found_skills.add(skill)
+
+        for alias, original in SKILL_ALIASES.items():
+
+            normalized_alias = normalize_text(alias)
+
+            if len(normalized_alias) <= 2:
+                pattern = r"\b" + re.escape(normalized_alias) + r"\b"
+
+                if re.search(pattern, normalized_text):
+                    found_skills.add(original)
+
+            else:
+                if normalized_alias in normalized_text:
+                    found_skills.add(original)
+
+            # if "C" in found_skills:
+            #     print("====== WHY C WAS ADDED ======")
+
+            #     if "c" in normalized_token_set:
+            #         print("Added from token matching")
+
+                # normalized_text = normalize_text(skill_text)
+
+                # pattern = r"\bc\b"
+
+                # if re.search(pattern, normalized_text):
+                #     print("Added from text matching")
+
+                # print("============================")
 
     return sorted(found_skills)
