@@ -115,6 +115,16 @@ def is_project_title(line):
     # Skip descriptions
     text = text.lstrip("•∗▪●■►*- ").strip()
 
+    first = text.split()[0].lower()
+
+    # Reject description/action lines
+    if first in DESCRIPTION_WORDS:
+        return False
+
+    # Reject lowercase-starting lines (project titles normally start with uppercase)
+    if text and text[0].islower():
+        return False
+
     verbs = {
         "built","developed","implemented","designed",
         "created","engineered","worked","explored",
@@ -159,6 +169,8 @@ def is_project_title(line):
         "opencv", "scikit-learn", "numpy", "pandas"
     }
 
+    if len (text)>70:
+         return False
     parts = [p.strip().lower() for p in text.split(",")]
 
     # If every comma-separated item is a technology, this is NOT a project title
