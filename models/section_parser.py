@@ -148,7 +148,7 @@ def extract_sections(resume_text):
                 if "technical" in lower:
                     print("FOUND LINE :",repr(lower))
 
-                if re.fullmatch(rf"{re.escape(header)}[:\s]*",lower):
+                if (current_section != "skills" and re.fullmatch(rf"{re.escape(header)}[:\s]*",lower)):
 
                     current_section = section
 

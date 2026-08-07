@@ -48,12 +48,16 @@ def normalize_text(text):
     return text.strip()
 
 def extract_skill_tokens(skill_text):
-
+    
     tokens = []
     print(skill_text)
     lines = skill_text.split("\n")
 
-        # Join "Frameworks &" + "Tools: ..."
+    for i , line  in enumerate(lines):
+        print(i,repr(line))
+            
+
+    # Join "Frameworks &" + "Tools: ..."
     i = 0
     while i < len(lines) - 1:
         if lines[i].strip().endswith("&"):
@@ -108,29 +112,59 @@ def extract_skill_tokens(skill_text):
         elif re.match(r"^Soft Skills\s*:", line, flags=re.I):
             line = line.replace("Soft Skills:", "", 1)
 
-        elif re.match(r"^Technical Skills\s*:", line, flags=re.I):
+        elif re.match(r"^Technical Skills\s*:?\s*$", line, flags=re.I):
             continue
 
         line = line.replace("&",",")
         line = line.replace("!",",")
         line = line.replace(";",",")
 
-        # Split by comma only
-        parts = [p.strip() for p in line.split(",")]
+        parts = []
+
+        # Resume uses one skill per line
+        if "," not in line:
+            parts = [line.strip()]
+
+        else:
+            for p in line.split(","):
+                p = p.strip()
+                if p:
+                    parts.append(p)
+
         for i in range(len(parts)):
             if parts[i].lower() == "supervised":
                 parts[i] = "Supervised Learning"
+
+        HEADINGS = {
+            "technical skills",
+            "languages",
+            "frontend",
+            "backend & apis",
+            "backend",
+            "apis",
+            "databases",
+            "data science",
+            "tools",
+            "cs core",
+            "certs"
+        }
+
+        parts = [p for p in parts if p.lower() not in HEADINGS]
 
         for part in parts:
             if part:
                  tokens.append(part)
 
+        # print("\n===== TOKENS =====")
+        # for t in tokens:
+        #     print(repr(t))
+            
     return tokens
 
 
 def get_skill_section(text):
 
-    text_lower = text.lower()
+    lines = text.split("\n")
 
     headings = [
         "technical skills",
@@ -148,44 +182,37 @@ def get_skill_section(text):
         "projects",
         "education",
         "certifications",
-        "achievements"
-        
+        "achievements",
+        "summary"
     ]
 
-    start = -1
+    start = None
+    end = len(lines)
 
-    for heading in headings:
+    # Find skill section start
+    for i, line in enumerate(lines):
 
-        match = re.search(
-            r'^\s*' + re.escape(heading) + r'\s*$',
-            text_lower,
-            flags=re.IGNORECASE | re.MULTILINE
-        )
-
-        if match:
-            start = match.start()
+        if line.strip().lower() in headings:
+            start = i + 1
             break
 
-    if start == -1:
+    if start is None:
         return text
 
-    end = len(text)
+    # Find next section
+    for i in range(start, len(lines)):
 
-    for heading in end_headings:
+        if lines[i].strip().lower() in end_headings:
+            end = i
+            break
 
-        match = re.search(
-            r'^\s*' + re.escape(heading) + r'\s*$',
-            text_lower[start + 10:],
-            flags=re.IGNORECASE | re.MULTILINE
-        )
+    section = "\n".join(lines[start:end])
 
-        if match:
-            pos = start + 10 + match.start()
+    print("======= SKILL SECTION =======")
+    print(section)
+    print("=============================")
 
-            if pos < end:
-                end = pos
-
-    return text[start:end]
+    return section
 
 # -----------------------------
 # Extract Skills
@@ -198,110 +225,94 @@ def extract_skills(text, all_skills):
     print("======RAW SKILL TEXT======")
     print(skill_text)
     print("=========================")
-    
-    tokens = extract_skill_tokens(skill_text)
-    
-    # print("\n===== TOKENS =====")
-    # for t in tokens:
-    #     print(repr(t))
 
-    # print(tokens)
-    # print([normalize_text(t) for t in tokens])
+    tokens = extract_skill_tokens(skill_text)
 
     found_skills = set()
 
     normalized_tokens = [normalize_text(token) for token in tokens]
-
     normalized_token_set = set(normalized_tokens)
 
+    # ----------------------------
+    # Exact Token Matching
+    # ----------------------------
     for skill in all_skills:
 
         normalized_skill = normalize_text(skill)
 
         if normalized_skill in normalized_token_set:
-            # if skill.lower()=="tsql":
-            #     print("TSQL added from token matching")
             found_skills.add(skill)
-        # Alias Matching
-        for alias, original in SKILL_ALIASES.items():
 
-            normalized_alias = normalize_text(alias)
+    # ----------------------------
+    # Alias Matching
+    # ----------------------------
+    for alias, original in SKILL_ALIASES.items():
 
-            if normalized_alias in normalized_token_set:
-                found_skills.add(original)
+        normalized_alias = normalize_text(alias)
 
-        normalized_text = normalize_text(skill_text)
+        if normalized_alias in normalized_token_set:
+            found_skills.add(original)
 
-        for skill in all_skills:
+    # ----------------------------
+    # Backup Text Search
+    # ----------------------------
+    normalized_text = normalize_text(skill_text)
 
-            normalized_skill = normalize_text(skill)
+    for skill in all_skills:
 
-            if len(normalized_skill) <= 2:
+        normalized_skill = normalize_text(skill)
 
-                # Skip single-letter programming languages
-                if normalized_skill in ["c", "r"]:
-                    continue
+        if len(normalized_skill) <= 2:
 
-                pattern = r"\b" + re.escape(normalized_skill) + r"\b"
+            if normalized_skill in ["c", "r"]:
+                continue
 
-                if re.search(pattern, normalized_text):
-                    
-                    found_skills.add(skill)
+            pattern = r"\b" + re.escape(normalized_skill) + r"\b"
 
-            else:
-                # Prevent SQL matching inside T-SQL / PL-SQL
-                if normalized_skill in ["sql", "t-sql", "pl/sql"]:
-                    pattern = r"\b" + re.escape(normalized_skill) + r"\b"
+            if re.search(pattern, normalized_text):
+                found_skills.add(skill)
 
-                    if re.search(pattern, normalized_text):
-                        found_skills.add(skill)
+        else:
 
-                else:
-                    pattern = r"\b" + re.escape(normalized_skill) + r"\b"
-                    if re.search(pattern, normalized_text):
-                            found_skills.add(skill)
-                    # if normalized_skill in normalized_text:
-                    #     found_skills.add(skill)
+            pattern = r"\b" + re.escape(normalized_skill) + r"\b"
 
-        for alias, original in SKILL_ALIASES.items():
+            if re.search(pattern, normalized_text):
+                found_skills.add(skill)
 
-            normalized_alias = normalize_text(alias)
+    # ----------------------------
+    # Alias Backup Search
+    # ----------------------------
+    for alias, original in SKILL_ALIASES.items():
 
-            if len(normalized_alias) <= 2:
-                pattern = r"\b" + re.escape(normalized_alias) + r"\b"
+        normalized_alias = normalize_text(alias)
 
-                if re.search(pattern, normalized_text):
-                    found_skills.add(original)
+        pattern = r"\b" + re.escape(normalized_alias) + r"\b"
 
-            else:
-                pattern = r"\b" + re.escape(normalized_alias) + r"\b"
-                if re.search(pattern, normalized_text):
-                    found_skills.add(original)
+        if re.search(pattern, normalized_text):
+            found_skills.add(original)
 
-    # print("\n ===== FINAL FOUND SKILLS=====")
-    # print(sorted(found_skills))
-
+    # ----------------------------
+    # Cleaning Duplicate Skills
+    # ----------------------------
     cleaned = {}
 
     for skill in found_skills:
 
         key = skill.lower()
 
-        # Remove T-SQL
         if key == "t-sql":
-             continue
+            continue
 
-        # Merge duplicate display names
-        if key in ["html5", "html"]:
+        if key in ["html", "html5"]:
             cleaned["html"] = "HTML"
 
-        elif key in ["css3", "css"]:
-                cleaned["css"] = "CSS"
+        elif key in ["css", "css3"]:
+            cleaned["css"] = "CSS"
 
-        elif key in ["react.js", "react"]:
-                cleaned["react"] = "React"
+        elif key in ["react", "react.js"]:
+            cleaned["react"] = "React"
 
         else:
-                cleaned[key] = skill
+            cleaned[key] = skill
 
     return sorted(cleaned.values())

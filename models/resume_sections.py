@@ -40,8 +40,9 @@ def detect_resume_sections(resume_text):
     # Certifications
     sections["Certifications"] = bool(
     re.search(
-        r"(?mi)^\s*(certifications?|certificates?|licenses?)\s*:?\s*$",
-        resume_text
+        r"^\s*(certifications?(\s*&\s*achievements?)?|certificates?|licenses?|courses?)\s*:?\s*$",
+        resume_text,
+        re.IGNORECASE | re.MULTILINE
     )
 )
 

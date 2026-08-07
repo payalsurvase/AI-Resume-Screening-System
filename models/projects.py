@@ -23,7 +23,8 @@ STOP_HEADERS = [
     "interests",
     "summary",
     "profile",
-    "contact"
+    "contact",
+    "activities"
 ]
 
 TECH_WORDS = {
@@ -39,12 +40,62 @@ TECH_WORDS = {
 def is_project_title(line):
     
     text = line.strip()
+
+    # Never treat email/links as project titles
+    if "@" in text:
+                return False
+    
+    if text.lower().startswith("mailto:"):
+                return False
+    
+            # Never treat section headings as project titles
+    lower = text.lower().strip()
+    
+    if lower in [
+                "achievements & activities",
+                "achievements",
+                "activities",
+                "interests",
+                "hobbies",
+                "certifications",
+                "education",
+                "experience",
+                "technical skills"
+            ]:
+                return False
+
     text = re.sub(
         r"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}",
         "",
         text,
         flags=re.I
     ).strip()
+
+    if not text.split():
+        return False
+    first = text.split()[0].lower()
+
+    DESCRIPTION_WORDS = {
+        "built",
+        "developed",
+        "implemented",
+        "created",
+        "designed",
+        "led",
+        "used",
+        "performed",
+        "assisted",
+        "worked",
+        "peer-to-peer",
+        "full-stack",
+        "property"
+    }
+
+    if first in DESCRIPTION_WORDS:
+        return False
+
+    if text.startswith(("•","-","*","∗")):
+        return False
     # print("CHECK TITLE:",repr(text))
 
     if len(text) < 3:
@@ -79,19 +130,12 @@ def is_project_title(line):
         return False
     
     # Skip technologies
-    # Skip technology-only lines
-    if "," in text :
-
-        # if not any(keyword in lower for keyword in PROJECT_KEYWORDS):
-            return False
+    if text.startswith(("•", "∗", "-", "*")):
+        return False
 
     # Skip URLs
     if re.search(r"https?://",lower):
         return False
-
-    # Skip dates
-    # if re.search(r"\b(19|20)\d{2}\b", text):
-    #     return False
 
     # Skip percentages
     if "%" in text:
@@ -103,9 +147,30 @@ def is_project_title(line):
 
     # Mostly title case
     words = text.split()
-    capital_words = sum(1 for w in words if w[:1].isupper())
 
-    if capital_words >= max(2, len(words)//2):
+    # Reject technology stack lines
+    tech_keywords = {
+        "python", "java", "c++", "javascript", "typescript",
+        "react", "react.js", "node.js", "express", "fastapi",
+        "flask", "django", "streamlit", "langchain", "faiss",
+        "gemini", "ollama", "tensorflow", "pytorch",
+        "mysql", "mongodb", "sqlite", "postgresql",
+        "html", "css", "bootstrap", "tailwind", "nlp",
+        "opencv", "scikit-learn", "numpy", "pandas"
+    }
+
+    parts = [p.strip().lower() for p in text.split(",")]
+
+    # If every comma-separated item is a technology, this is NOT a project title
+    if len(parts) >= 2 and all(p in tech_keywords for p in parts):
+        return False
+
+    capital_words = sum(1 for w in words if w[:1].isupper())
+    if text.endswith(":"):
+         return False
+    if ":" in text:
+         return False
+    if len(words)>=2 and capital_words >= max(2, len(words)//2):
         return True
 
     # Project numbering
@@ -140,7 +205,10 @@ def extract_projects(resume_text):
     for line in lines:
 
         text = line.strip()
-        text = re.sub(r"\s+github$", "",text, flags=re.I)
+
+        
+
+        text = re.sub(r"\s*\|?\s*github\s*$", "",text, flags=re.I).strip()
 
         lower = text.lower().rstrip(":").strip()
         
@@ -151,8 +219,9 @@ def extract_projects(resume_text):
 
             continue
 
-        if inside and any(stop in lower for stop in STOP_HEADERS):
+        normalized = re.sub(r"[:\s]+$", "", lower).strip()
 
+        if inside and normalized in STOP_HEADERS:
             break
 
         if not inside:
@@ -167,7 +236,10 @@ def extract_projects(resume_text):
         for part in parts:
 
             part = part.strip()
-            
+
+            # print("Checking:", repr(part))
+            # print("Result:", is_project_title(part))
+
             if is_project_title(part):
 
                 if part not in projects:
@@ -175,23 +247,25 @@ def extract_projects(resume_text):
 
         # Continue to next line
         # print("LINE:",repr(text))
-        if "|" in text or "\t" in text:
-            for part in parts:
-                part = part.strip()
-                if is_project_title(part) and part not in projects:
-                    projects.append(part)
-            continue
+        # if "|" in text or "\t" in text:
+        #     for part in parts:
+        #         part = part.strip()
+        #         if is_project_title(part) and part not in projects:
+        #             projects.append(part)
+        #     continue
 
         
-        if is_project_title(text):
+        # if is_project_title(text):
             
-            if text not in projects:
+        #     if text not in projects:
 
-                projects.append(text)
-    print("\n========== PROJECTS FOUND ==========")
+        #         projects.append(text)
+
+
+    # print("\n========== PROJECTS FOUND ==========")
     for i, p in enumerate(projects, 1):
         print(i, repr(p))
-    print("====================================")   
+    # print("====================================")   
 
     return projects
 
