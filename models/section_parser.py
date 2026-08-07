@@ -139,32 +139,7 @@ def extract_sections(resume_text):
         # Remove trailing : or -
         lower = re.sub(r"[:|\-]+$", "", lower).strip()
 
-        # Detect merged section headings inside a line
-        for section, headers in SECTION_HEADERS.items():
-
-            for header in headers:
-
-                pattern = r"\b" + re.escape(header) + r"\b"
-
-                if re.search(pattern, lower):
-
-                    idx = lower.find(header)
-
-                    # If heading is not at beginning, split the line
-                    if idx > 0:
-
-                        before = line[:idx].strip()
-
-                        after = line[idx:].strip()
-
-                        if before:
-                            sections[current_section].append(before)
-
-                        line = after
-                        lower = line.lower().strip()
-
-                    break
-
+        
         matched = False
 
         for section, headers in SECTION_HEADERS.items():
@@ -207,6 +182,7 @@ def extract_sections(resume_text):
 
                 if any(header in lower_line for header in stop_headers):
                     current_section = "other"
+                    continue
 
                 sections[current_section].append(line)
                 

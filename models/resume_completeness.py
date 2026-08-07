@@ -1,54 +1,36 @@
 import re
+from .resume_sections import detect_resume_sections
 
 def calculate_resume_completeness(resume_text):
 
-    score = 0
-
     text = resume_text.lower()
 
-    # Email
-    if re.search(r"\S+@\S+", resume_text):
-        score += 10
+    sections = detect_resume_sections(resume_text)
 
-    # Phone
-    if re.search(r"\+?\d[\d\s-]{8,15}", resume_text):
-        score += 10
+    score = 0
 
-    # Education
-    education_keywords = [
-        "b.tech",
-        "b.e",
-        "m.tech",
-        "degree",
-        "university",
-        "college"
-    ]
+    if sections["Contact Information"]:
+        score += 20
 
-    if any(word in text for word in education_keywords):
+    if sections["Education"]:
         score += 15
 
-    # Projects
-    if "project" in text:
+    if sections["Projects"]:
         score += 15
 
-    # Experience
-    if "experience" in text or "internship" in text:
+    if sections["Experience"]:
         score += 15
 
-    # Certifications
-    if "certificate" in text or "certification" in text:
+    if sections["Certifications"]:
         score += 10
 
-    # GitHub
-    if "github.com" in text:
+    if sections["GitHub"]:
         score += 10
 
-    # LinkedIn
-    if "linkedin.com" in text:
+    if sections["LinkedIn"]:
         score += 10
 
-    # Skills Section
-    if "skills" in text:
+    if sections["Skills"]:
         score += 5
 
     return score

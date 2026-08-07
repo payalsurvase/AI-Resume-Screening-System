@@ -1,0 +1,12 @@
+streamlit
+pandas
+plotly
+scikit-learn
+numpy
+spacy
+python-docx
+PyPDF2
+pdfplumber
+sentence-transformers
+reportlab
+joblib

@@ -136,4 +136,4 @@ def extract_text(file):
 
     # Select the richest extraction
     
-    return extract_with_pdfplumber(file)
+    return max(texts,key=len)

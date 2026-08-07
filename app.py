@@ -22,6 +22,7 @@ from models.nlp_parser import parse_resume_nlp
 from models.resume_suggestions import generate_resume_suggestions
 from io import BytesIO
 from models.shortlist import calculate_shortlist_status
+from pdf_report import generate_pdf_report
 model = joblib.load("models/resume_shortlist_model.pkl")
 
 # -----------------------------
@@ -140,7 +141,9 @@ elif menu == "Student Mode":
 
         candidate = parse_resume(uploaded_resume)
         resume_text = candidate["text"]
-
+        # st.write("resume length:",len(resume_text))
+        # st.write(repr(resume_text[-1000]))
+        # st.text(resume_text)
         sections = extract_sections(candidate["text"])
         sections = clean_sections(sections)
 
@@ -152,21 +155,8 @@ elif menu == "Student Mode":
         else:
             skills_text = resume_text
 
-        
-
-        # st.subheader("📂 Parsed Resume Sections")
-        # st.write(sections)
-
-        
-        # st.subheader("Experience Debug")
-        # st.text(resume_text)
-
-        # entities = parse_resume_nlp(resume_text)
-        # st.subheader("🧠 NLP Extracted Entities")
-        # st.write(entities)
-
         resume_sections = detect_resume_sections(resume_text) 
-
+        # st.write(resume_sections)
         completeness_score = calculate_resume_completeness(resume_text)
 
         candidate_name = candidate["name"]
@@ -187,8 +177,32 @@ elif menu == "Student Mode":
             all_skills
             )
 
-        print("\n====== JOB DESCRIPTION =====")
-        print(job_description)
+        normalized_resume_skills = []
+
+        for skill in resume_skills:
+            s = skill.lower().strip()
+
+            if s in ["llm", "llms"]:
+                normalized_resume_skills.append("Large Language Models")
+
+            else:
+                normalized_resume_skills.append(skill)
+
+        resume_skills = list(set(normalized_resume_skills))
+
+        # Remove unwanted skills
+        UNWANTED_SKILLS = {
+            "Artificial Intelligence",
+            "HTTPS",
+            "HTTP",
+            "Stack"
+        }
+
+        resume_skills = [
+            skill for skill in resume_skills
+            if skill not in UNWANTED_SKILLS
+        ]
+
 
         required_skills = extract_required_skills(
             job_description,
@@ -204,17 +218,6 @@ elif menu == "Student Mode":
               list(set(resume_skills).intersection(set(required_skills)))
         )
 
-        # print("\nResume Skills:")
-        # print(resume_skills)
-
-        # print("\nRequired Skills:")
-        # print(required_skills)
-
-        # print("\nMatched Skills:")
-        # print(matched_skills)
-
-        # print("\nMissing Skills:")
-        # print(missing_skills)
 
         recommended_courses = []
 
@@ -246,7 +249,7 @@ elif menu == "Student Mode":
         experience_months = experience["total_months"]
         experience_text = experience["experience"] 
 
-        st.write("Experience:",experience_months)   
+        # st.write("Experience:",experience_months)   
                # Change later if you extract experience automatically
         education_level = extract_education(resume_text) 
         # Change later if you extract education automatically
@@ -255,8 +258,11 @@ elif menu == "Student Mode":
 
         project_count = extract_project_count(resume_text)
         projects = extract_projects(resume_text)
+        if projects is None:
+            projects = []
         project_count = len(projects)
-
+        # st.write("projects:",projects)
+        # st.write("project count:",project_count)
         resume_length = len(resume_text)
         github_activity = extract_github(resume_text)           # Change later if GitHub link is found
         linkedin_activity = extract_linkedin(resume_text)
@@ -320,7 +326,9 @@ elif menu == "Student Mode":
             project_count,
             experience_months,
             education_level,
-            github_activity
+            github_activity,
+            resume_sections,
+            linkedin_activity
         )
 
         suggestions = generate_resume_suggestions(
@@ -335,7 +343,11 @@ elif menu == "Student Mode":
 
             education_level,
 
-            github_activity
+            github_activity,
+
+            linkedin_activity,
+            
+            resume_sections
 
 )
 
@@ -408,6 +420,9 @@ elif menu == "Student Mode":
         st.write("🎓 Education Score:", result["education_score"])
 
         st.write("🐙 GitHub Score:", result["github_score"])
+
+        st.write("🐙 Linkedin Score:", result["linkedin_score"])
+
         st.write("⭐ Final Resume Score:", result["final_score"])
 
         st.subheader("📄 Resume Completeness Score")
@@ -655,51 +670,40 @@ elif menu == "Student Mode":
         st.divider()
 
         # ---------------------------------
-        # Download Report
+        # Generate PDF Report
         # ---------------------------------
-        report = f"""
-        ==============================
-        AI Resume Screening Report
-        ==============================
 
-        Candidate Name : {candidate_name}
+        pdf_file = "Resume_Report.pdf"
 
-        Email : {email}
+        generate_pdf_report(
+            pdf_file,
+            candidate_name,
+            ats_score,
+            match_score,
+            resume_score,
+            completeness_score,
+            ai_prediction,
+            status,
+            matched_skills,
+            missing_skills,
+            suggestions,
+            strengths,
+            weaknesses
+        )
 
-        Phone : {phone}
+        # ---------------------------------
+        # Download PDF
+        # ---------------------------------
 
-        Resume Score : {resume_score}
+        with open(pdf_file, "rb") as file:
 
-        ATS Score : {ats_score}
-
-        Job Match : {match_score}
-
-        Skills Found
-
-        {', '.join(resume_skills)}
-
-        Missing Skills
-
-        {', '.join(missing_skills)}
-
-        Suggestions
-
-        {chr(10).join(recommended_courses)}
-
-        Generated by AI Resume Screening System
-        """
-
-        st.download_button(
-                    label="📄 Download Report",
-                    data=report,
-                    file_name="Resume_Report.txt",
-                    mime="text/plain"
-                )
-
-        st.divider()
-
-        st.success("🎉 Resume Analysis Completed Successfully!")
-
+            st.download_button(
+                label="📄 Download PDF Report",
+                data=file,
+                file_name="Resume_Report.pdf",
+                mime="application/pdf"
+            )
+        
 elif menu == "Recruiter Mode":
 
     st.title("🏢 Recruiter Dashboard")
@@ -725,9 +729,9 @@ elif menu == "Recruiter Mode":
     )
 
     uploaded_resumes = st.file_uploader(
-    "📂 Upload Multiple Resumes",
-    type=["pdf", "docx"],
-    accept_multiple_files=True
+        "📂 Upload Multiple Resumes",
+        type=["pdf", "docx"],
+        accept_multiple_files=True
     )
 
     analyze_all = st.button(
@@ -773,9 +777,11 @@ elif menu == "Recruiter Mode":
                 job_description
             )
 
+            
+            
             project_count = len(extract_projects(resume_text))
 
-            years_experience = extract_experience(resume_text)
+            experience_months = extract_experience(resume_text)
 
             education_level = extract_education(resume_text)
 
@@ -793,7 +799,7 @@ elif menu == "Recruiter Mode":
             resume_length = len(resume_text)
 
             model_input = pd.DataFrame([{
-                "years_experience": years_experience,
+                "years_experience": experience_months,
                 "skills_match_score": match_score,
                 "education_level": education_map.get(education_level, 1),
                 "project_count": project_count,
@@ -809,7 +815,7 @@ elif menu == "Recruiter Mode":
                 match_score,
                 ats_score,
                 project_count,
-                years_experience,
+                experience_months,
                 education_level,
                 github_activity
             )
@@ -822,7 +828,7 @@ elif menu == "Recruiter Mode":
 
                 "Phone": candidate["phone"],
 
-                "Experience": years_experience,
+                "Experience": experience_months,
 
                 "Education": education_level,
 

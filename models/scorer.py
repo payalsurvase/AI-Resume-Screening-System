@@ -2,17 +2,15 @@
 # Resume Score Calculator
 # -----------------------------------
 
-# -----------------------------------
-# Resume Score Calculator
-# -----------------------------------
-
 def calculate_resume_score(
     match_score,
     ats_score,
     project_count,
-    years_experience,
+    experience_months,
     education_level,
-    github_activity
+    github_activity,
+    resume_sections,
+    linkedin_activity
 ):
 
     # -------------------------
@@ -23,7 +21,28 @@ def calculate_resume_score(
     # -------------------------
     # Experience Score
     # -------------------------
-    experience_score = min(years_experience * 3, 15)
+    if experience_months >= 24:
+        experience_score = 15
+
+    elif experience_months >= 12:
+        experience_score = 12
+
+    elif experience_months >= 6:
+        experience_score = 8
+
+    elif experience_months >= 3:
+        experience_score = 5
+
+    elif experience_months > 0:
+        experience_score = 3
+
+    # Experience section exists but dates couldn't be extracted
+    elif resume_sections.get("Experience", False):
+        experience_score = 2
+
+    # No experience section at all
+    else:
+        experience_score = 0
 
     # -------------------------
     # Education Score
@@ -42,7 +61,7 @@ def calculate_resume_score(
     # GitHub Score
     # -------------------------
     github_score = 5 if github_activity else 0
-
+    linkedin_score = 5 if linkedin_activity else 0
     # -------------------------
     # Final Score
     # -------------------------
@@ -52,7 +71,8 @@ def calculate_resume_score(
         project_score +
         experience_score +
         education_score +
-        github_score
+        github_score +
+        linkedin_score
     )
 
     final_score = min(round(final_score, 2), 100)
@@ -70,6 +90,8 @@ def calculate_resume_score(
         "education_score": education_score,
 
         "github_score": github_score,
+
+        "linkedin_score": linkedin_score,
 
         "final_score": final_score
     }

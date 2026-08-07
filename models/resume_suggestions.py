@@ -9,7 +9,9 @@ def generate_resume_suggestions(
     project_count,
     experience_months,
     education_level,
-    github_activity
+    github_activity,
+    linkedin_activity,
+    resume_sections
 
 ):
 
@@ -41,7 +43,7 @@ def generate_resume_suggestions(
     # Experience
     # -------------------------
 
-    if experience_months <= 0:
+    if experience_months <= 0 and not resume_sections.get("Experience",False):
 
         suggestions.append(
             "Add internship or work experience."
@@ -61,10 +63,10 @@ def generate_resume_suggestions(
     # GitHub
     # -------------------------
 
-    if github_activity == 0:
+    if not linkedin_activity:
+        suggestions.append("Add your LinkedIn profile.")
 
-        suggestions.append(
-            "Add your GitHub profile."
-        )
+    if not github_activity:
+        suggestions.append("Add your GitHub profile.")
 
     return suggestions

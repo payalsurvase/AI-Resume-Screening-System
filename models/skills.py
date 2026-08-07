@@ -50,7 +50,7 @@ def normalize_text(text):
 def extract_skill_tokens(skill_text):
 
     tokens = []
-
+    print(skill_text)
     lines = skill_text.split("\n")
 
         # Join "Frameworks &" + "Tools: ..."
@@ -77,6 +77,15 @@ def extract_skill_tokens(skill_text):
 
         elif re.match(r"^Languages\s*:", line, flags=re.I):
             line = line.replace("Languages:", "", 1)
+
+        elif re.match(r"^Backend\s*:", line, flags=re.I):
+            line = line.replace("Backend:", "", 1)
+
+        elif re.match(r"^Frontend\s*:", line, flags=re.I):
+            line = line.replace("Frontend:", "", 1)
+
+        elif re.match(r"^Databases\s*:", line, flags=re.I):
+            line = line.replace("Databases:", "", 1)
 
         elif re.match(r"^Frameworks\s*&\s*Tools\s*:", line, flags=re.I):
             line = line.replace("Frameworks & Tools:", "", 1)
@@ -118,23 +127,86 @@ def extract_skill_tokens(skill_text):
 
     return tokens
 
+
+def get_skill_section(text):
+
+    text_lower = text.lower()
+
+    headings = [
+        "technical skills",
+        "skills summary",
+        "skills",
+        "technical expertise",
+        "technology stack",
+        "core competencies"
+    ]
+
+    end_headings = [
+        "experience",
+        "professional experience",
+        "internship experience",
+        "projects",
+        "education",
+        "certifications",
+        "achievements"
+        
+    ]
+
+    start = -1
+
+    for heading in headings:
+
+        match = re.search(
+            r'^\s*' + re.escape(heading) + r'\s*$',
+            text_lower,
+            flags=re.IGNORECASE | re.MULTILINE
+        )
+
+        if match:
+            start = match.start()
+            break
+
+    if start == -1:
+        return text
+
+    end = len(text)
+
+    for heading in end_headings:
+
+        match = re.search(
+            r'^\s*' + re.escape(heading) + r'\s*$',
+            text_lower[start + 10:],
+            flags=re.IGNORECASE | re.MULTILINE
+        )
+
+        if match:
+            pos = start + 10 + match.start()
+
+            if pos < end:
+                end = pos
+
+    return text[start:end]
+
 # -----------------------------
 # Extract Skills
 # -----------------------------
 
 def extract_skills(text, all_skills):
-    skill_text = text
+
+    skill_text = get_skill_section(text)
+
     print("======RAW SKILL TEXT======")
     print(skill_text)
     print("=========================")
+    
     tokens = extract_skill_tokens(skill_text)
     
-    print("\n===== TOKENS =====")
-    for t in tokens:
-        print(repr(t))
+    # print("\n===== TOKENS =====")
+    # for t in tokens:
+    #     print(repr(t))
 
-    print(tokens)
-    print([normalize_text(t) for t in tokens])
+    # print(tokens)
+    # print([normalize_text(t) for t in tokens])
 
     found_skills = set()
 
@@ -147,6 +219,8 @@ def extract_skills(text, all_skills):
         normalized_skill = normalize_text(skill)
 
         if normalized_skill in normalized_token_set:
+            # if skill.lower()=="tsql":
+            #     print("TSQL added from token matching")
             found_skills.add(skill)
         # Alias Matching
         for alias, original in SKILL_ALIASES.items():
@@ -171,11 +245,23 @@ def extract_skills(text, all_skills):
                 pattern = r"\b" + re.escape(normalized_skill) + r"\b"
 
                 if re.search(pattern, normalized_text):
+                    
                     found_skills.add(skill)
 
             else:
-                if normalized_skill in normalized_text:
-                    found_skills.add(skill)
+                # Prevent SQL matching inside T-SQL / PL-SQL
+                if normalized_skill in ["sql", "t-sql", "pl/sql"]:
+                    pattern = r"\b" + re.escape(normalized_skill) + r"\b"
+
+                    if re.search(pattern, normalized_text):
+                        found_skills.add(skill)
+
+                else:
+                    pattern = r"\b" + re.escape(normalized_skill) + r"\b"
+                    if re.search(pattern, normalized_text):
+                            found_skills.add(skill)
+                    # if normalized_skill in normalized_text:
+                    #     found_skills.add(skill)
 
         for alias, original in SKILL_ALIASES.items():
 
@@ -188,22 +274,34 @@ def extract_skills(text, all_skills):
                     found_skills.add(original)
 
             else:
-                if normalized_alias in normalized_text:
+                pattern = r"\b" + re.escape(normalized_alias) + r"\b"
+                if re.search(pattern, normalized_text):
                     found_skills.add(original)
 
-            # if "C" in found_skills:
-            #     print("====== WHY C WAS ADDED ======")
+    # print("\n ===== FINAL FOUND SKILLS=====")
+    # print(sorted(found_skills))
 
-            #     if "c" in normalized_token_set:
-            #         print("Added from token matching")
+    cleaned = {}
 
-                # normalized_text = normalize_text(skill_text)
+    for skill in found_skills:
 
-                # pattern = r"\bc\b"
+        key = skill.lower()
 
-                # if re.search(pattern, normalized_text):
-                #     print("Added from text matching")
+        # Remove T-SQL
+        if key == "t-sql":
+             continue
 
-                # print("============================")
+        # Merge duplicate display names
+        if key in ["html5", "html"]:
+            cleaned["html"] = "HTML"
 
-    return sorted(found_skills)
+        elif key in ["css3", "css"]:
+                cleaned["css"] = "CSS"
+
+        elif key in ["react.js", "react"]:
+                cleaned["react"] = "React"
+
+        else:
+                cleaned[key] = skill
+
+    return sorted(cleaned.values())

@@ -19,7 +19,11 @@ SKILL_ALIASES = {
     "nlp": "Natural Language Processing",
     "eda": "Exploratory Data Analysis",
     "rag": "Retrieval Augmented Generation",
+    "llms": "Large Language Models",
     "llm": "Large Language Models",
+    "llms":"LLM",
+    "large language models":"LLMs",
+    "rag":"RAG",
 
     # Python Libraries
     "sklearn": "Scikit-learn",
@@ -37,12 +41,19 @@ SKILL_ALIASES = {
     "express": "Express.js",
     "next": "Next.js",
     "vue": "Vue.js",
+    "html5":"HTML",
+    "css3":"CSS",
+    "rest apis": "REST API",
+    "restful api": "REST API",
+    "restful apis": "REST API",
 
     # Databases
     "postgres": "PostgreSQL",
     "postgresql": "PostgreSQL",
     "mongo": "MongoDB",
     "mssql": "Microsoft SQL Server",
+    "MySQL":"SQL",
+    "mysql":"SQL",
 
     # Cloud
     "aws": "AWS",

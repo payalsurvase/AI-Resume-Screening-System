@@ -133,6 +133,7 @@ def extract_name(text):
 # -----------------------------
 def parse_resume(uploaded_file):
 
+
     if uploaded_file is None:
         return{
             "name" : " ",

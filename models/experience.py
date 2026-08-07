@@ -40,8 +40,8 @@ def extract_experience(resume_text):
 
     text = get_experience_section(resume_text)
 
-    print("START SECTION")
-    print(text[:300])
+    # print("START SECTION")
+    # print(text[:300])
     # print("==============================")
 
     date_pattern = re.compile(
@@ -68,12 +68,12 @@ def extract_experience(resume_text):
 )
 
     intervals = []
-    print("===== EXPERIENCE TEXT =====")
-    print(repr(text))
-    print("===========================")
+    # print("===== EXPERIENCE TEXT =====")
+    # print(repr(text))
+    # print("===========================")
 
-    print("===== DATE MATCHES =====")
-    print(date_pattern.findall(text))
+    # print("===== DATE MATCHES =====")
+    # print(date_pattern.findall(text))
 
     for start_text, end_text in date_pattern.findall(text):
 
@@ -101,7 +101,7 @@ def extract_experience(resume_text):
             if any(keyword in context for keyword in education_keywords):
                 continue
 
-        print("DATE FOUND:", start_text, "------>", end_text)
+        # print("DATE FOUND:", start_text, "------>", end_text)
 
         start = parse_date(start_text)
 
@@ -131,11 +131,11 @@ def extract_experience(resume_text):
 
     months = total_months % 12
 
-    print("Intervals:", intervals)
+    # print("Intervals:", intervals)
     # print("Merged:", merged)
-    print("Total Months:", total_months)
-    print("Years:", years)
-    print("Months:", months)
+    # print("Total Months:", total_months)
+    # print("Years:", years)
+    # print("Months:", months)
 
     return {
         "years": years,

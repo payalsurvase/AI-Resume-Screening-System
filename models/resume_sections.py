@@ -38,10 +38,12 @@ def detect_resume_sections(resume_text):
     )
 
     # Certifications
-    sections["Certifications"] = (
-        "certification" in text or
-        "certificate" in text
+    sections["Certifications"] = bool(
+    re.search(
+        r"(?mi)^\s*(certifications?|certificates?|licenses?)\s*:?\s*$",
+        resume_text
     )
+)
 
     # GitHub
     sections["GitHub"] = "github.com" in text
