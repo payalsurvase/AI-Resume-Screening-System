@@ -143,7 +143,7 @@ elif menu == "Student Mode":
         resume_text = candidate["text"]
         # st.write("resume length:",len(resume_text))
         # st.write(repr(resume_text[-1000]))
-        st.text(resume_text)
+        # st.text(resume_text)
         sections = extract_sections(candidate["text"])
         sections = clean_sections(sections)
 

@@ -1,5 +1,6 @@
 import re
 from datetime import datetime,date
+import calendar
 
 MONTHS = {
     "jan": 1, "january": 1,
@@ -40,6 +41,10 @@ def extract_experience(resume_text):
 
     text = get_experience_section(resume_text)
 
+    print("===== EXPERIENCE TEXT =====")
+    print(text)
+    print("===========================")
+
     # print("START SECTION")
     # print(text[:300])
     # print("==============================")
@@ -68,9 +73,7 @@ def extract_experience(resume_text):
 )
 
     intervals = []
-    # print("===== EXPERIENCE TEXT =====")
-    # print(repr(text))
-    # print("===========================")
+    
 
     # print("===== DATE MATCHES =====")
     # print(date_pattern.findall(text))
@@ -152,65 +155,68 @@ def get_experience_section(text):
     text = text.lower()
 
     headings = [
-    "professional experience",
-    "work experience",
-    "employment",
-    "employment history",
-    "experience",
-    "internship",
-    "internships"
-]
+        "professional experience",
+        "work experience",
+        "employment",
+        "employment history",
+        "experience",
+        "internship",
+        "internships"
+    ]
 
     end_headings = [
-    "projects",
-    "technical skills",
-    "skills",
-    "education",
-    "certifications",
-    "achievements",
-    "languages",
-    "publications",
-    "hobbies",
-    "interests"
-]
+        "projects",
+        "technical skills",
+        "skills",
+        "education",
+        "certifications",
+        "achievements",
+        "languages",
+        "publications",
+        "hobbies",
+        "interests"
+    ]
+
+    lines = text.split("\n")
+
     start = -1
 
-    for heading in headings:
+    # -----------------------------
+    # Find Experience heading
+    # -----------------------------
+    for i, line in enumerate(lines):
 
-        match = re.search(
-            r'^\s*' + re.escape(heading) + r'\s*$',
-            text,
-            flags=re.IGNORECASE | re.MULTILINE
-        )
+        clean_line = line.strip()
 
-        if match:
-            start = match.start()
+        if clean_line in headings:
+            start = i
             break
 
-    
     if start == -1:
         return text
 
-    end = len(text)
+    # -----------------------------
+    # Find NEXT section heading
+    # -----------------------------
+    end = len(lines)
 
-    for heading in end_headings:
+    for i in range(start + 1, len(lines)):
 
-        match = re.search(
-            r"\b" + re.escape(heading) + r"\b",
-            text[start + 20:]
-        )
+        clean_line = lines[i].strip()
 
-        if not match:
-            continue
+        # Only an ENTIRE line can be a section heading
+        if clean_line in end_headings:
+            end = i
+            break
 
-        pos = start + 20 + match.start()
+    section = "\n".join(lines[start:end])
 
-        if pos < end:
-            end = pos
+    print("===== EXPERIENCE SECTION =====")
+    print(section)
+    print("==============================")
 
-    return text[start:end]
+    return section
 
-import calendar
 
 def parse_date(date_str):
 

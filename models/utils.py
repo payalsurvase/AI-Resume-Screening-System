@@ -31,6 +31,11 @@ def clean_text(text):
 # -----------------------------------
 def get_missing_skills(found_skills, required_skills):
 
+    print("===== REPORT SKILL DEBUG =====")
+    print("FOUND SKILLS:", found_skills)
+    print("REQUIRED SKILLS:", required_skills)
+    print("==============================")
+    
     # Normalize found skills
     found = set(skill.lower() for skill in found_skills)
 

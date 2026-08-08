@@ -106,6 +106,20 @@ def is_project_title(line):
 
     lower = text.lower()
 
+    # Ignore non-project link placeholders
+    if lower in {"project link", "project links", "view project", "view project link"}:
+        return False
+
+    # Ignore common non-project section headings
+    if lower in {
+        "leadership experience",
+        "leadership",
+        "activities",
+        "extracurricular activities",
+        "achievements & activities"
+    }:
+        return False
+
     # if "|" in text:
     #     return False
 
@@ -147,6 +161,10 @@ def is_project_title(line):
     if re.search(r"https?://",lower):
         return False
 
+    # Ignore mail/link placeholders
+    if lower.startswith(("mailto:", "http://", "https://")):
+        return False
+    
     # Skip percentages
     if "%" in text:
         return False

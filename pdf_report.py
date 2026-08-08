@@ -425,9 +425,9 @@ def generate_pdf_report(
 
         canvas.restoreState()
 
-        doc.build(
-            elements,
-            onFirstPage=add_footer,
-            onLaterPages=add_footer
+    doc.build(
+        elements,
+        onFirstPage=add_footer,
+        onLaterPages=add_footer
     )
 
